@@ -65,7 +65,7 @@ jobs:
           df -h
           du -csh .git/objects
           du -csh *.7z.*
-          rm -rf .git/objects
+          # rm -rf .git/objects
           rm -f *.7z.*
           df -h
 
