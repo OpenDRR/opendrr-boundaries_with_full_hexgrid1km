@@ -32,14 +32,14 @@ jobs:
           df -h
           du -csh /usr/share/dotnet
           du -csh /usr/local/lib/android
-          du -csh /opt/ghc
-          du -csh /usr/share/swift
-          du -csh /usr/local/graalvm
-          sudo eatmydata rm -rf /usr/share/dotnet       # 24.1 GB
-          sudo eatmydata rm -rf /usr/local/lib/android  # 11.3 GB
-          sudo eatmydata rm -rf /opt/ghc                #  1.8 GB
-          sudo eatmydata rm -rf /usr/share/swift        #  1.3 GB
-          sudo eatmydata rm -rf /usr/local/graalvm      #  1.0 GB
+          du -csh /opt/ghc || true
+          du -csh /usr/share/swift || true
+          du -csh /usr/local/graalvm || true
+          sudo eatmydata rm -rf /usr/share/dotnet       # 24.1 GB / 468 MiB?
+          sudo eatmydata rm -rf /usr/local/lib/android  # 11.3 GB / 14 GiB
+          sudo eatmydata rm -rf /opt/ghc || true        #  1.8 GB / Non-existent
+          sudo eatmydata rm -rf /usr/share/swift || true #  1.3 GB
+          sudo eatmydata rm -rf /usr/local/graalvm || true #  1.0 GB
           df -h
 
       - name: Checkout repository
