@@ -1,13 +1,13 @@
 name: Upload database
 
 # This GitHub Actions workflow checkouts the PostGIS database dump
-# pre-populated on @whkchow's computer and upload it as artifact
-# and release asset (for a tagged release) on GitHub
+# pre-populated on @whkchow's computer and upload it as release assets
+# (for a tagged release) on GitHub
 
 on:
   push:
-    branches:
-      - '**'
+#   branches:
+#     - '**'
     tags:
       - 'v*'
   workflow_dispatch:
@@ -69,15 +69,15 @@ jobs:
           rm -f *.7z.*
           df -h
 
-      - name: "Upload database dump as GitHub artifact"
-        uses: actions/upload-artifact@v3
-        if: "!contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]')"
-        with:
-          name: opendrr-boundaries-sql
-          path: |
-            *.sql
-            *.sql.*sum
-          if-no-files-found: error
+#     - name: "Upload database dump as GitHub artifact"
+#       uses: actions/upload-artifact@v3
+#       if: "!contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]')"
+#       with:
+#         name: opendrr-boundaries-sql
+#         path: |
+#           *.sql
+#           *.sql.*sum
+#         if-no-files-found: error
 
       - name: Split database dump into 2GB chunks (for tagged release)
         if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
