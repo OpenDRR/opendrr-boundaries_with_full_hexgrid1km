@@ -25,6 +25,23 @@ jobs:
       BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
 
     steps:
+      - name: Make more room by deleting unused software
+        if: ${{ github.event_name != 'schedule' }}
+        run: |
+          set -x
+          df -h
+          du -csh /usr/share/dotnet
+          du -csh /usr/local/lib/android
+          du -csh /opt/ghc
+          du -csh /usr/share/swift
+          du -csh /usr/local/graalvm
+          sudo eatmydata rm -rf /usr/share/dotnet       # 24.1 GB
+          sudo eatmydata rm -rf /usr/local/lib/android  # 11.3 GB
+          sudo eatmydata rm -rf /opt/ghc                #  1.8 GB
+          sudo eatmydata rm -rf /usr/share/swift        #  1.3 GB
+          sudo eatmydata rm -rf /usr/local/graalvm      #  1.0 GB
+          df -h
+
       - name: Checkout repository
         uses: actions/checkout@v3
 
@@ -33,7 +50,7 @@ jobs:
           sudo eatmydata apt update
           sudo apt install -y 7zip
 
-      - name: Decompress 7z archive
+      - name: Extract database dump from 7z archive
         run: |
           eatmydata 7zz x *.7z.001
 
@@ -41,6 +58,16 @@ jobs:
         run: |
           set -x
           sha256sum -b *.sql > $(echo *.sql).sha256sum
+
+      - name: Free up more space by removing Git objects and 7z archive
+        run: |
+          set -x
+          df -h
+          du -csh .git/objects
+          du -csh *.7z.*
+          rm -rf .git/objects
+          rm -f .git/*.7z.*
+          df -h
 
       - name: "Upload database dump as GitHub artifact"
         uses: actions/upload-artifact@v3
