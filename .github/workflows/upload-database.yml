@@ -1,0 +1,83 @@
+name: Upload database
+
+# This GitHub Actions workflow checkouts the PostGIS database dump
+# pre-populated on @whkchow's computer and upload it as artifact
+# and release asset (for a tagged release) on GitHub
+
+on:
+  push:
+    branches:
+      - '**'
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag"
+        required: true
+
+concurrency: prevent-race-condition
+
+jobs:
+  upload-opendrr-database:
+    runs-on: ubuntu-22.04
+    env:
+      BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install 7-zip
+        run: |
+          sudo eatmydata apt update
+          sudo apt install -y 7zip
+
+      - name: Decompress 7z archive
+        run: |
+          7zz x *.7z.001
+
+      - name: Calculate checksum of database dump
+        run: |
+          set -x
+          sha256sum -b *.sql > $(echo *.sql).sha256sum
+
+      - name: "Upload database dump as GitHub artifact"
+        uses: actions/upload-artifact@v3
+        if: "!contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]')"
+        with:
+          name: opendrr-boundaries-sql
+          path: |
+            *.sql
+            *.sql.*sum
+          if-no-files-found: error
+
+      - name: Split database dump into 2GB chunks (for tagged release)
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        run: |
+          set -x
+          split -b 2GB -d --verbose *.sql $(echo *.sql).
+          for i in $(echo *.sql).[0-9][0-9]; do
+            sha256sum -b "${i}" >> $(echo *.sql).sha256sum
+          done
+
+      - name: "Upload database dump as GitHub release asset (for tagged release)"
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        with:
+          files: |
+            *.sql.[0-9][0-9]
+            *.sql.sha256sum
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_tag || '' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: "Upload database dump as release assets using xresloader/upload-to-github-release@v1"
+        uses: xresloader/upload-to-github-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          file: "*.sql.[0-9][0-9];*.sha256sum"
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_tag || '' }}
+          tags: true
+          draft: false
