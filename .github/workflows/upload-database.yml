@@ -66,7 +66,7 @@ jobs:
           du -csh .git/objects
           du -csh *.7z.*
           rm -rf .git/objects
-          rm -f .git/*.7z.*
+          rm -f *.7z.*
           df -h
 
       - name: "Upload database dump as GitHub artifact"
